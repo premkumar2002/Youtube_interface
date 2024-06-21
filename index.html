@@ -1,23 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Home</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    <!--
-      Need a visual blank slate?
-      Remove all code in `styles.css`!
-    -->
-    <link rel="stylesheet" href="styles.css" />
-    <script type="module" src="script.js"></script>
-  </head>
-  <body>
-    <nav>
-      <a href="/" aria-current="page">Home</a>
-      <a href="/page2.html">Other page</a>
-    </nav>
-    <main>
-      <h1>Home page</h1>
-    </main>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube-like Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            color: red;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .search-bar {
+            flex-grow: 1;
+            margin: 0 20px;
+            display: flex;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px 0 0 20px;
+        }
+        .search-bar button {
+            padding: 10px 20px;
+            background-color: #f8f8f8;
+            border: 1px solid #ccc;
+            border-left: none;
+            border-radius: 0 20px 20px 0;
+            cursor: pointer;
+        }
+        .user-actions {
+            display: flex;
+            align-items: center;
+        }
+        .user-actions button {
+            margin-left: 10px;
+            padding: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        .video-item {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .video-thumbnail {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+        }
+        .video-thumbnail img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .video-info {
+            padding: 10px;
+        }
+        .video-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .video-channel {
+            font-size: 14px;
+            color: #606060;
+        }
+        .video-player {
+            display: flex;
+            margin-top: 20px;
+        }
+        .main-video {
+            flex: 2;
+            margin-right: 20px;
+        }
+        .side-videos {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        .side-video-item {
+            display: flex;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .side-video-thumbnail {
+            width: 168px;
+            height: 94px;
+            margin-right: 10px;
+        }
+        .side-video-info {
+            flex: 1;
+        }
+        .video-description, .video-comments {
+            margin-top: 20px;
+        }
+        .comment {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo" onclick="goToHome()">YouTube</div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search">
+            <button onclick="searchVideos()">Search</button>
+        </div>
+        <div class="user-actions">
+            <button>Upload</button>
+            <button>Sign In</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="videoPlayer" style="display: none;">
+            <div class="video-player">
+                <div class="main-video" id="mainVideo"></div>
+                <div class="side-videos" id="sideVideos"></div>
+            </div>
+            <div class="video-description" id="videoDescription"></div>
+            <div class="video-comments" id="videoComments"></div>
+        </div>
+        <div class="video-grid" id="videoGrid"></div>
+    </div>
+
+    <script>
+        let videos = [
+            { id: 'dQw4w9WgXcQ', title: 'Never Gonna Give You Up', channel: 'Rick Astley', description: 'The classic hit song...', comments: ['Great song!', 'Never gets old'] },
+            { id: 'kJQP7kiw5Fk', title: 'Despacito', channel: 'Luis Fonsi', description: 'Latin pop sensation...', comments: ['Amazing rhythm', 'Love this song'] },
+            { id: 'JGwWNGJdvx8', title: 'Shape of You', channel: 'Ed Sheeran', description: 'Ed Sheeran\'s hit single...', comments: ['Ed is the best!', 'Catchy tune'] },
+            { id: 'RgKAFK5djSk', title: 'See You Again', channel: 'Wiz Khalifa', description: 'Tribute to Paul Walker...', comments: ['RIP Paul', 'Beautiful song'] },
+            { id: 'OPf0YbXqDm0', title: 'Uptown Funk', channel: 'Mark Ronson', description: 'Funky pop collaboration...', comments: ['Makes me want to dance', 'So catchy!'] },
+            { id: 'pRpeEdMmmQ0', title: 'Gangnam Style', channel: 'PSY', description: 'K-pop phenomenon...', comments: ['Legendary', 'Still funny after all these years'] },
+            { id: 'fJ9rUzIMcZQ', title: 'Bohemian Rhapsody', channel: 'Queen', description: 'Queen\'s masterpiece...', comments: ['Best song ever', 'Freddie Mercury is a legend'] },
+            { id: 'uO59tfQ2TbA', title: 'Dark Horse', channel: 'Katy Perry', description: 'Katy Perry\'s hit single...', comments: ['Love the Egyptian theme', 'Great vocals'] }
+        ];
+
+        function searchVideos() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filteredVideos = videos.filter(video => 
+                video.title.toLowerCase().includes(query) || 
+                video.channel.toLowerCase().includes(query) ||
+                video.description.toLowerCase().includes(query)
+            );
+            displayVideos(filteredVideos);
+        }
+
+        function displayVideos(videosToDisplay) {
+            const videoGrid = document.getElementById('videoGrid');
+            videoGrid.innerHTML = '';
+            videosToDisplay.forEach(video => {
+                videoGrid.innerHTML += createVideoElement(video);
+            });
+            document.getElementById('videoPlayer').style.display = 'none';
+            videoGrid.style.display = 'grid';
+        }
+
+        function createVideoElement(video) {
+            return `
+                <div class="video-item" onclick="playVideo('${video.id}')">
+                    <div class="video-thumbnail">
+                        <img src="https://img.youtube.com/vi/${video.id}/0.jpg" alt="${video.title}">
+                    </div>
+                    <div class="video-info">
+                        <div class="video-title">${video.title}</div>
+                        <div class="video-channel">${video.channel}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createSideVideoElement(video) {
+            return `
+                <div class="side-video-item" onclick="playVideo('${video.id}')">
+                    <img class="side-video-thumbnail" src="https://img.youtube.com/vi/${video.id}/0.jpg" alt="${video.title}">
+                    <div class="side-video-info">
+                        <div class="video-title">${video.title}</div>
+                        <div class="video-channel">${video.channel}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function playVideo(videoId) {
+            const videoPlayer = document.getElementById('videoPlayer');
+            const mainVideo = document.getElementById('mainVideo');
+            const sideVideos = document.getElementById('sideVideos');
+            const videoDescription = document.getElementById('videoDescription');
+            const videoComments = document.getElementById('videoComments');
+            const videoGrid = document.getElementById('videoGrid');
+
+            const video = videos.find(v => v.id === videoId);
+
+            mainVideo.innerHTML = `
+                <iframe width="100%" height="500" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
+                <h2>${video.title}</h2>
+                <p>${video.channel}</p>
+            `;
+            
+            sideVideos.innerHTML = '';
+            videos.forEach(v => {
+                if (v.id !== videoId) {
+                    sideVideos.innerHTML += createSideVideoElement(v);
+                }
+            });
+
+            videoDescription.innerHTML = `<h3>Description:</h3><p>${video.description}</p>`;
+            
+            videoComments.innerHTML = '<h3>Comments:</h3>';
+            video.comments.forEach(comment => {
+                videoComments.innerHTML += `<div class="comment">${comment}</div>`;
+            });
+
+            videoPlayer.style.display = 'block';
+            videoGrid.style.display = 'none';
+        }
+
+        function goToHome() {
+            document.getElementById('searchInput').value = '';
+            displayVideos(videos);
+        }
+
+        // Initial display of videos
+        document.addEventListener('DOMContentLoaded', () => displayVideos(videos));
+    </script>
+</body>
 </html>
